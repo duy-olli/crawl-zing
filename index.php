@@ -1,5 +1,5 @@
 <?php
-
+    set_time_limit(0);
     ini_set('default_charset', 'utf-8');
     define('ROOT_PATH', dirname(__FILE__));
     require_once ROOT_PATH . '/vendor/autoload.php';
@@ -36,7 +36,8 @@
             'Bài hát',
             'Ca sĩ',
             'Lượt nghe',
-            'Đường dẫn'
+            'Đường dẫn',
+            '128 Kbps'
         ];
         $writer->insertOne($header);
 
@@ -49,7 +50,8 @@
                 $mySong['title'],
                 $mySong['author'],
                 $mySong['count_listen'],
-                $mySong['link']
+                $mySong['link'],
+                $mySong['128kbps']
             ];
 
             $writer->insertOne($row);
@@ -67,7 +69,7 @@
     /////   DECLARE FUNCTION    /////
 
     // parse single page song of author
-    function parseSongPage($html) {
+    function parseSongPage($client, $html) {
         $list = [];
         $songs = $html->filter('.list-item > ul > li');
 
@@ -75,15 +77,21 @@
             foreach ($songs as $song) {
                 $crawlerSong = new Crawler($song);
 
+                $songId = $crawlerSong->attr('data-id');
                 $title = $crawlerSong->filter('.info-dp > h3 > a');
                 $titleArr = explode('-', $title->text());
                 $listen = $crawlerSong->filter('.bar-chart > .fn-bar');
+
+                // get download mp3 link
+                $songUrl = 'http://api.mp3.zing.vn/api/mobile/song/getsonginfo?requestdata={"id":"'. $songId .'"}';
+                $responseJSON = json_decode(file_get_contents($songUrl), true);
 
                 $list[] = [
                     'title' => trim($titleArr[0]),
                     'author' => trim($titleArr[1]),
                     'link' => $title->attr('href'),
-                    'count_listen' => $listen->attr('data-total')
+                    'count_listen' => $listen->attr('data-total'),
+                    '128kbps' => $responseJSON['source']['128']
                 ];
             }
         }
@@ -91,7 +99,7 @@
         return $list;
     }
 
-    //get all songs of author
+    // get all songs of author
     function getSongs($client, $url, &$songs) {
 
         $totalPage = 1;
@@ -104,12 +112,12 @@
             $totalPage = 25;
         }
 
-        $songs = parseSongPage($html);
+        $songs = parseSongPage($client, $html);
 
         if ($totalPage > 1) {
             for ($page = 2; $page <= $totalPage; $page++) {
                 $html = $client->request('GET', $url . '?page=' . $page);
-                $songs = array_merge($songs, parseSongPage($html));
+                $songs = array_merge($songs, parseSongPage($client, $html));
             }
         }
     }

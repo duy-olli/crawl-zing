@@ -6,7 +6,7 @@ $(document).ready(function() {
             $('.loading').html('<div class="alert alert-warning"><strong>Loading...</strong> Please wait...</div>');
             document.location.href = '/index.php?keyword=' + keyword;
             setTimeout(function() {
-                $('.loading').html('<div class="alert alert-success"><strong>Success!</strong> Láy danh sách SUCCESS.</div>');
+                $('.loading').html('<div class="alert alert-success"><strong>Success!</strong> Script already running...</div>');
                 $('.keyword').val('');
             }, 3000);
         } else {

@@ -84,14 +84,32 @@
 
                 // get download mp3 link
                 $songUrl = 'http://api.mp3.zing.vn/api/mobile/song/getsonginfo?requestdata={"id":"'. $songId .'"}';
-                $responseJSON = json_decode(file_get_contents($songUrl), true);
+                // $responseJSON = json_decode(file_get_contents($songUrl), true);
+                // var_dump($responseJSON['source']);
+
+                $cURL = curl_init();
+                curl_setopt($cURL, CURLOPT_URL, $songUrl);
+                curl_setopt($cURL, CURLOPT_HTTPGET, true);
+                curl_setopt($cURL, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($cURL, CURLOPT_HTTPHEADER, array(
+                    'Content-Type: application/json',
+                    'Accept: application/json'
+                ));
+                $result = curl_exec($cURL);
+                curl_close($cURL);
+
+                $responseJSON = json_decode($result, true);
+                $source = '';
+                if (isset($responseJSON['source']['128'])) {
+                    $source = $responseJSON['source']['128'];
+                }
 
                 $list[] = [
                     'title' => trim($titleArr[0]),
                     'author' => trim($titleArr[1]),
                     'link' => $title->attr('href'),
                     'count_listen' => $listen->attr('data-total'),
-                    '128kbps' => $responseJSON['source']['128']
+                    '128kbps' => $source
                 ];
             }
         }
